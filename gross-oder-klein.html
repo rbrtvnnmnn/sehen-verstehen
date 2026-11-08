@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Groß oder klein?</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+/* Layout: same Karopapier world. Sentence workshop (all lowercase → Satzanfang, Begleiter arrows, Artikelprobe), rule cards, 10-task round (pick the spelling / tap the words that need a capital). */
+:root{
+  --paper:#fbfcff; --grid:#e3e9f5; --ink:#1a2342; --ink-soft:#56607c;
+  --pen:#2447c9; --pen-ink:#ffffff; --card:#ffffff; --line:#cdd6ea;
+  --noun:#c25400; --start:#16796d; --ok:#1f8a4c; --no:#c2410c;
+  --display:"Bricolage Grotesque","Avenir Next","Trebuchet MS",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#17241e; --grid:#20322a; --ink:#eef4ef; --ink-soft:#a7b8ae;
+    --pen:#9db8ff; --pen-ink:#0f1830; --card:#1e2f27; --line:#33493e;
+    --noun:#ffb35c; --start:#5fd8c8; --ok:#5fd08d; --no:#ff9a62; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#17241e; --grid:#20322a; --ink:#eef4ef; --ink-soft:#a7b8ae;
+  --pen:#9db8ff; --pen-ink:#0f1830; --card:#1e2f27; --line:#33493e;
+  --noun:#ffb35c; --start:#5fd8c8; --ok:#5fd08d; --no:#ff9a62; color-scheme:dark;
+}
+body{
+  margin:0; background-color:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:20px 20px;
+  color:var(--ink); font-family:var(--body); font-size:17px; line-height:1.5;
+}
+[hidden]{display:none!important}
+.wrap{
+  max-width:980px; margin:0 auto; display:grid; gap:44px;
+  padding-block:28px 72px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+h1,h2,h3{font-family:var(--display); text-wrap:balance; margin:0; line-height:1.08}
+h1{font-size:clamp(38px,7vw,58px); font-weight:800; letter-spacing:-.02em}
+h2{font-size:clamp(24px,4vw,32px); font-weight:750}
+p{margin:0}
+a{color:var(--pen)}
+.lede{font-size:19px; color:var(--ink-soft); max-width:54ch; margin-top:10px}
+.eyebrow{font:700 13px/1 var(--body); letter-spacing:.09em; text-transform:uppercase; color:var(--pen)}
+.sec-head{display:grid; gap:10px; max-width:62ch}
+.hint-line{color:var(--ink-soft); font-size:15px}
+.card{
+  background:var(--card); border:1.5px solid var(--line); border-radius:22px;
+  box-shadow:5px 5px 0 var(--line); padding:clamp(18px,3.5vw,32px); min-width:0;
+  display:grid; gap:18px;
+}
+.out{font-size:19px; max-width:62ch; min-height:1.6em}
+.out b{font-family:var(--display)}
+.c-beg{color:var(--pen)} .c-noun{color:var(--noun)} .c-start{color:var(--start)}
+
+/* sentence */
+.sent{
+  position:relative; display:flex; flex-wrap:wrap; align-items:baseline; column-gap:.32em; row-gap:68px;
+  padding:34px 0 34px; font:700 clamp(26px,4.6vw,36px)/1.2 var(--display);
+}
+.sent svg{position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible}
+.sent .arc{fill:none; stroke:var(--pen); stroke-width:2.5; stroke-linecap:round}
+.sent .ah{fill:var(--pen)}
+.wrapw{white-space:nowrap}
+.wd{position:relative; white-space:nowrap; border-radius:8px; padding:0 2px}
+button.wd{font:inherit; color:inherit; background:transparent; border:2px dashed transparent; cursor:pointer; padding:0 3px; margin:-2px -3px}
+button.wd:hover{border-color:var(--line)}
+button.wd.up{border-color:var(--pen); border-style:solid}
+button.wd.bad{border-color:var(--no); border-style:solid; color:var(--no)}
+.wd .l1{display:inline-block}
+.wd.jump .l1{animation:jump .5s both}
+@keyframes jump{0%{transform:translateY(0)}40%{transform:translateY(-.45em)}100%{transform:translateY(0)}}
+.wd.start .l1{color:var(--start)}
+.wd.noun{color:var(--noun)}
+.wd.start.noun .l1{color:var(--noun)}
+.wd.beg{color:var(--pen); text-decoration:underline; text-decoration-thickness:3px; text-underline-offset:6px}
+.wd.beg.start .l1{color:var(--pen)}
+.wd.skip{color:var(--ink-soft)}
+.bub{
+  position:absolute; bottom:calc(100% + 6px); left:50%; transform:translateX(-50%);
+  white-space:nowrap; font:700 14px/1 var(--body); padding:5px 8px; border-radius:8px;
+  background:var(--card); border:1.5px solid currentColor; animation:pop .3s both;
+}
+.bub.ok{color:var(--ok)} .bub.no{color:var(--no)} .bub.st{color:var(--start)}
+.wd.probe-no{color:var(--ink-soft); text-decoration:line-through; text-decoration-color:var(--no); text-decoration-thickness:2px}
+@keyframes pop{from{transform:translateX(-50%) scale(.4); opacity:0}}
+.chips{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+.chips .lbl{font-size:14px; color:var(--ink-soft)}
+.chip{
+  font:600 15px/1 var(--display); color:var(--ink); background:var(--paper);
+  border:1.5px solid var(--line); border-radius:999px; padding:7px 12px; cursor:pointer;
+}
+.chip:hover,.chip.sel{border-color:var(--pen); color:var(--pen)}
+.steps{display:flex; flex-wrap:wrap; gap:8px}
+.steps span{font:700 14px/1 var(--body); padding:6px 10px; border-radius:99px; border:1.5px solid var(--line); color:var(--ink-soft)}
+.steps span.on{border-color:currentColor}
+.steps span.s1.on{color:var(--start)} .steps span.s2.on{color:var(--pen)} .steps span.s3.on{color:var(--noun)}
+
+/* rules */
+.rules{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-top:14px}
+.rule{background:var(--card); border:1.5px solid var(--line); border-radius:16px; padding:18px; display:grid; gap:10px; align-content:start; min-width:0}
+.rule .kind{font:700 13px/1 var(--body); letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft)}
+.rule .verdict{font:800 22px/1.2 var(--display)}
+.rule p{font-size:16px}
+.rule b{font-family:var(--display)}
+
+/* trainer */
+.qtop{display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; font:700 15px/1 var(--display); color:var(--ink-soft)}
+.bar-p{height:8px; border-radius:99px; background:var(--line); overflow:hidden; margin-top:8px}
+.bar-p i{display:block; height:100%; width:0; background:var(--pen); border-radius:99px; transition:width .3s}
+.task{font-size:clamp(20px,3vw,24px); line-height:1.5; max-width:46ch; font-weight:700}
+.qs{font:700 clamp(24px,4.4vw,34px)/1.5 var(--display)}
+.blank{display:inline-block; min-width:3.5ch; border-bottom:.08em dashed var(--pen); color:var(--ok); text-align:center}
+.ops{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; max-width:420px}
+.op{
+  font:750 clamp(22px,3.4vw,28px)/1.2 var(--display);
+  padding:12px; border-radius:14px; border:2px solid var(--line); background:var(--paper); color:var(--ink); cursor:pointer;
+}
+.op:hover{border-color:var(--pen)}
+.op.right{border-color:var(--ok); background:color-mix(in srgb,var(--ok) 14%,var(--card)); color:var(--ok)}
+.op.wrong{border-color:var(--no); color:var(--no); opacity:.7}
+.op:disabled{cursor:default}
+.say{font-size:19px; min-height:1.6em; max-width:62ch}
+.say.ok{color:var(--ok)} .say.no{color:var(--no)}
+.done{font:750 clamp(26px,5vw,38px)/1.15 var(--display)}
+.stage{display:grid; gap:16px}
+.controls{display:flex; flex-wrap:wrap; gap:10px; align-items:center}
+/* Pulsing ring on the button that reveals the next step. */
+.nudge:not(:disabled){animation:nudge 1.8s ease-out infinite}
+@keyframes nudge{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--pen) 55%,transparent)}70%,100%{box-shadow:0 0 0 12px color-mix(in srgb,var(--pen) 0%,transparent)}}
+.btn{
+  font:700 19px/1 var(--display); border-radius:14px; padding:14px 22px; cursor:pointer;
+  border:2px solid var(--pen); background:var(--pen); color:var(--pen-ink);
+}
+.btn:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent; color:var(--pen)}
+.btn:focus-visible,.chip:focus-visible,.op:focus-visible,button.wd:focus-visible{outline:3px solid var(--pen); outline-offset:2px}
+
+footer{color:var(--ink-soft); font-size:15px; display:flex; flex-wrap:wrap; gap:6px 18px}
+
+@media (max-width:760px){
+  .rules{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:640px){
+  .btn{font-size:17px; padding:12px 18px}
+  .sent{row-gap:64px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important; animation:none!important}
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <div class="eyebrow">Rechtschreibung</div>
+    <h1>Groß oder klein?</h1>
+    <p class="lede">Hören kann man Groß und Klein nicht. Dafür gibt es Proben, die man im Satz sehen kann. Drei Fragen reichen fast immer.</p>
+  </header>
+
+  <section class="card" aria-labelledby="s-title">
+    <div class="sec-head">
+      <div class="eyebrow">Die Satz-Werkstatt</div>
+      <h2 id="s-title">Drei Proben</h2>
+      <p>Der Satz ist ganz klein geschrieben. Mach eine Probe nach der anderen und schau, welche Wörter groß werden.</p>
+    </div>
+    <div class="chips" id="s-chips"><span class="lbl">Satz:</span></div>
+    <div class="steps" id="s-steps"><span class="s1">1 Satzanfang</span><span class="s2">2 Begleiter</span><span class="s3">3 Artikelprobe</span></div>
+    <div class="sent" id="s-sent"></div>
+    <p class="out" id="s-out" aria-live="polite"></p>
+    <div class="controls"><button class="btn" type="button" id="s-next"></button></div>
+  </section>
+
+  <section aria-labelledby="rule-title">
+    <div class="sec-head">
+      <div class="eyebrow">Merke</div>
+      <h2 id="rule-title">Groß schreibt man …</h2>
+    </div>
+    <div class="rules">
+      <div class="rule">
+        <span class="kind">Probe 1</span>
+        <span class="verdict c-start">… das erste Wort im Satz.</span>
+        <p>Immer, egal was für ein Wort es ist: <b>Heute</b> regnet es. <b>Wir</b> bleiben drinnen.</p>
+      </div>
+      <div class="rule">
+        <span class="kind">Probe 2</span>
+        <span class="verdict c-beg">… das Wort, auf das ein Begleiter zeigt.</span>
+        <p>Begleiter sind zum Beispiel der, die, das, ein, eine, mein, dein, unser, kein, im, ins, zum, zur, beim.</p>
+        <p>Frag: der kleine was? <b>Hund</b>. Wörter dazwischen sagen nur, wie etwas ist. Sie bleiben klein: der <b>kleine</b> Hund.</p>
+      </div>
+      <div class="rule">
+        <span class="kind">Probe 3</span>
+        <span class="verdict c-noun">… ein Wort, vor das der, die oder das passt.</span>
+        <p>Kein Begleiter da? Setz einen davor. Ich habe Hunger → <b>der Hunger</b> passt, also groß. Wir laufen schnell → <b>das schnell</b>? Passt nicht, also klein.</p>
+        <p>Tipp: Wörter mit den Endungen ‑ung, ‑heit, ‑keit, ‑nis und ‑schaft sind Nomen: die Zeitung, die Freiheit.</p>
+      </div>
+      <div class="rule">
+        <span class="kind">Falle</span>
+        <span class="verdict">Mit Begleiter wird ein Verb zum Nomen.</span>
+        <p>Wir <b>essen</b> (klein, das tun wir). Aber: <b>beim Essen</b>, <b>das Laufen</b>, <b>zum Malen</b>. Der Begleiter macht das Wort zum Nomen.</p>
+        <p>Genauso: Es wird <b>dunkel</b>. Aber: Angst <b>im Dunkeln</b>.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="q-title">
+    <div class="eyebrow">Jetzt du</div>
+    <h2 id="q-title">10 Aufgaben</h2>
+    <div>
+      <div class="qtop"><span id="qpos"></span><span id="qscore"></span></div>
+      <div class="bar-p"><i id="qbar"></i></div>
+    </div>
+    <div id="qbody" class="stage"></div>
+  </section>
+
+  <footer>
+    <a href="index.html">← Alle Übungen</a>
+    <span>Auch hier:</span>
+    <a href="kurz-oder-lang.html">Kurz oder lang?</a>
+  </footer>
+</main>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const shuffle = arr => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const capF = s => s.charAt(0).toUpperCase() + s.slice(1);
+
+  // ^ = Begleiter (points to the next *), * = Nomen with Begleiter,
+  // +Wort:art = Nomen without Begleiter (Artikelprobe passt), -wort = Artikelprobe passt nicht
+  const SENT = [
+    {s:'^Der kleine *Hund läuft -schnell über ^die grüne *Wiese.', hero:true},
+    {s:'^Im *Sommer gehen +Kinder:die -gern ^ins *Freibad.', hero:true},
+    {s:'^Beim *Essen erzählt +Papa:der von ^seiner *Reise.', hero:true},
+    {s:'^Im *Herbst pflücken -wir +Äpfel:die und +Birnen:die.', hero:true},
+    {s:'^Das *Laufen macht mir +Spaß:der.', hero:true},
+    {s:'Tom hat +Angst:die ^im *Dunkeln.', hero:true},
+    {s:'+Hunde:die bellen -oft in ^der *Nacht.', hero:true},
+    {s:'^Meine *Oma hat mir ^zum *Geburtstag ^ein *Buch geschenkt.'},
+    {s:'Nach ^der *Schule spielen wir mit ^unserem neuen *Ball.'},
+    {s:'^Unser *Lehrer liest ^eine spannende *Geschichte vor.'},
+    {s:'^Zum *Frühstück esse ich +Brot:das mit +Honig:der.'},
+  ].map(x => ({...x, toks:parseS(x.s)}));
+
+  function parseS(src){
+    const toks = src.split(' ').map((raw, i) => {
+      let t = raw, kind = '';
+      if ('^*+-'.includes(t[0])){ kind = t[0]; t = t.slice(1); }
+      const m = t.match(/^(.*?)([.,!?]*)$/); t = m[1]; const p = m[2];
+      let art = '';
+      if (kind === '+') [t, art] = t.split(':');
+      const lo = t.toLowerCase();
+      return {i, kind, art, p, lo, cap:capF(lo), big:i === 0 || kind === '*' || kind === '+'};
+    });
+    toks.forEach(t => { if (t.kind === '^') t.to = toks.findIndex(u => u.i > t.i && u.kind === '*'); });
+    return toks;
+  }
+
+  // view: {up:[bool], cls:[str], bub:[{t,c}|null], arcs:bool, tap:bool, jump:Set}
+  function sentHTML(toks, v){
+    return toks.map(t => {
+      const txt = v.up[t.i] ? t.cap : t.lo;
+      const inner = `<span class="l1">${txt[0]}</span>${txt.slice(1)}${v.bub && v.bub[t.i] ? `<span class="bub ${v.bub[t.i].c}">${v.bub[t.i].t}</span>` : ''}`;
+      const cls = `wd ${v.cls ? v.cls[t.i] || '' : ''}${v.jump && v.jump.has(t.i) ? ' jump' : ''}${v.tap && v.up[t.i] ? ' up' : ''}`;
+      const el = v.tap ? `<button type="button" class="${cls}" data-w="${t.i}" aria-pressed="${!!v.up[t.i]}">${inner}</button>` : `<span class="${cls}" data-w="${t.i}">${inner}</span>`;
+      return `<span class="wrapw">${el}${t.p}</span>`;
+    }).join('');
+  }
+  let aid = 0;
+  function drawArcs(el, toks){
+    const old = el.querySelector('svg'); if (old) old.remove();
+    const box = el.getBoundingClientRect(), id = `ah${++aid}`;
+    let s = `<svg aria-hidden="true"><defs><marker id="${id}" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0 0L10 5L0 10z"/></marker></defs>`;
+    toks.filter(t => t.kind === '^' && t.to >= 0).forEach(t => {
+      const a = el.querySelector(`[data-w="${t.i}"]`), b = el.querySelector(`[data-w="${t.to}"]`);
+      if (!a || !b) return;
+      const ra = a.getBoundingClientRect(), rb = b.getBoundingClientRect();
+      if (!ra.width) return;
+      const x1 = ra.left + ra.width / 2 - box.left, x2 = rb.left + rb.width / 2 - box.left, f = n => n.toFixed(1);
+      if (rb.top > ra.bottom){
+        // noun is on the next line: curve down and point at it from above
+        const y1 = ra.bottom - box.top + 4, y2 = rb.top - box.top - 2;
+        s += `<path class="arc" d="M${f(x1)} ${f(y1)} C${f(x1)} ${f(y1 + 30)} ${f(x2)} ${f(y2 - 30)} ${f(x2)} ${f(y2)}" marker-end="url(#${id})"/>`;
+        return;
+      }
+      const y = Math.max(ra.bottom, rb.bottom) - box.top + 4;
+      const dip = Math.min(22, 10 + Math.abs(x2 - x1) * .1);
+      s += `<path class="arc" d="M${f(x1)} ${f(y)} Q${f((x1 + x2) / 2)} ${f(y + dip * 2)} ${f(x2)} ${f(y + 2)}" marker-end="url(#${id})"/>`;
+    });
+    el.insertAdjacentHTML('beforeend', s + '</svg>');
+  }
+
+  // show the proofs up to a step (1 Satzanfang, 2 Begleiter, 3 Artikelprobe)
+  function proofView(toks, step, jumpStep){
+    const up = toks.map(() => false), cls = toks.map(() => ''), bub = toks.map(() => null), jump = new Set();
+    if (step >= 1){ up[0] = true; cls[0] += ' start'; if (step === 1) bub[0] = {t:'Satzanfang', c:'st'}; if (jumpStep === 1) jump.add(0); }
+    if (step >= 2) toks.forEach(t => {
+      if (t.kind === '^'){
+        cls[t.i] += ' beg';
+        for (let k = t.i + 1; k < t.to; k++) cls[k] += ' skip';
+      }
+      if (t.kind === '*'){ up[t.i] = true; cls[t.i] += ' noun'; if (jumpStep === 2) jump.add(t.i); }
+    });
+    if (step >= 3) toks.forEach(t => {
+      if (t.kind === '+'){ up[t.i] = true; cls[t.i] += ' noun'; bub[t.i] = {t:`${t.art} ✓`, c:'ok'}; if (jumpStep === 3) jump.add(t.i); }
+      if (t.kind === '-'){ cls[t.i] += ' probe-no'; bub[t.i] = {t:'✗', c:'no'}; }
+    });
+    return {up, cls, bub, jump};
+  }
+  const shown = (toks, t, up) => up[t.i] ? t.cap : t.lo;
+  function proofText(toks, step){
+    const v = proofView(toks, step);
+    if (step === 0) return 'So sieht es aus, wenn man nur nach Gehör schreibt. Welche Wörter müssen groß?';
+    if (step === 1) return `<b class="c-start">Probe 1: Satzanfang.</b> Das erste Wort schreibt man immer groß: „${toks[0].cap}“.`;
+    if (step === 2){
+      const pairs = toks.filter(t => t.kind === '^' && t.to >= 0).map(t => `„${toks.slice(t.i, t.to + 1).map(u => shown(toks, u, v.up)).join(' ')}“`);
+      const skipped = toks.filter((u, k) => v.cls[k].includes('skip')).map(u => `„${u.lo}“`);
+      return `<b class="c-beg">Probe 2: Begleiter.</b> Begleiter zeigen auf ein Nomen: ${pairs.join(', ')}.` +
+        (skipped.length ? ` ${skipped.join(' und ')} ${skipped.length === 1 ? 'sagt' : 'sagen'} nur, wie etwas ist, und ${skipped.length === 1 ? 'bleibt' : 'bleiben'} klein.` : '');
+    }
+    const yes = toks.filter(t => t.kind === '+').map(t => `„${t.art} ${t.cap}“`), no = toks.filter(t => t.kind === '-').map(t => `„der, die, das ${t.lo}“`);
+    return `<b class="c-noun">Probe 3: Artikelprobe</b> für Wörter ohne Begleiter.` +
+      (yes.length ? ` ${yes.join(' und ')} ${yes.length === 1 ? 'passt' : 'passen'}, also groß.` : '') +
+      (no.length ? ` ${no.join(' und ')} ${no.length === 1 ? 'passt' : 'passen'} nicht, also klein.` : '');
+  }
+
+  // ---------- sentence workshop ----------
+  const HERO = SENT.filter(x => x.hero);
+  const S = {k:0, step:0};
+  const SNEXT = ['Probe 1: Satzanfang', 'Probe 2: Begleiter', 'Probe 3: Artikelprobe', 'Nächster Satz'];
+  function heroDraw(jumpStep){
+    const toks = HERO[S.k].toks, el = $('#s-sent');
+    el.innerHTML = sentHTML(toks, proofView(toks, S.step, jumpStep));
+    if (S.step >= 2) drawArcs(el, toks);
+    $('#s-out').innerHTML = proofText(toks, S.step) + (S.step === 3 ? ' Fertig, so stimmt der Satz.' : '');
+    $$('#s-steps span').forEach((sp, i) => sp.classList.toggle('on', S.step >= i + 1));
+    const nb = $('#s-next'); nb.textContent = SNEXT[S.step]; nb.classList.toggle('nudge', S.step < 3);
+    $$('#s-chips .chip').forEach((c, i) => c.classList.toggle('sel', i === S.k));
+  }
+  HERO.forEach((x, i) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip'; b.textContent = String(i + 1);
+    b.setAttribute('aria-label', `Satz ${i + 1}`);
+    b.addEventListener('click', () => { S.k = i; S.step = 0; heroDraw(); });
+    $('#s-chips').appendChild(b);
+  });
+  $('#s-next').addEventListener('click', () => {
+    if (S.step === 3){ S.k = (S.k + 1) % HERO.length; S.step = 0; heroDraw(); return; }
+    S.step++; heroDraw(S.step);
+  });
+
+  // ---------- trainer ----------
+  const ONE = {
+    big:[
+      ['Wir gehen in den {Wald}.', '„den“ ist ein Begleiter: den was? Den Wald.'],
+      ['Ich habe {Hunger}.', 'Artikelprobe: „der Hunger“ passt. Auch Gefühle sind Nomen.'],
+      ['Beim {Schwimmen} friere ich.', '„beim“ ist ein Begleiter: beim was? Beim Schwimmen. So wird aus dem Verb ein Nomen.'],
+      ['Die {Zeitung} liegt auf dem Tisch.', '„Die“ zeigt darauf: die was? Die Zeitung. Die Endung -ung verrät es auch.'],
+      ['Mein Bruder hat viel {Mut}.', 'Artikelprobe: „der Mut“ passt.'],
+      ['Ich freue mich auf die {Ferien}.', '„die“ ist ein Begleiter: die was? Die Ferien.'],
+      ['Danke für deine {Hilfe}.', '„deine“ ist ein Begleiter: deine was? Deine Hilfe.'],
+      ['Das {Lesen} macht mir Spaß.', '„Das“ ist ein Begleiter: das was? Das Lesen. So wird aus dem Verb ein Nomen.'],
+      ['Wir haben {Glück} gehabt.', 'Artikelprobe: „das Glück“ passt.'],
+      ['Unsere Lehrerin liest eine {Geschichte} vor.', '„eine“ ist ein Begleiter: eine was? Eine Geschichte.'],
+      ['Zum {Malen} brauche ich Farben.', '„Zum“ ist ein Begleiter: zum was? Zum Malen. So wird aus dem Verb ein Nomen.'],
+      ['Tom hat Angst im {Dunkeln}.', '„im“ ist ein Begleiter: im was? Im Dunkeln.'],
+    ],
+    small:[
+      ['Wir {schwimmen} im See.', 'Hier sagt „schwimmen“, was wir tun. Kein Begleiter zeigt darauf, also klein.'],
+      ['Ich kann gut {lesen}.', 'Hier sagt „lesen“, was ich kann. Kein Begleiter zeigt darauf, also klein.'],
+      ['Das Bild ist sehr {schön}.', 'Artikelprobe: „das schön“? Passt nicht. „schön“ sagt, wie das Bild ist.'],
+      ['Am Abend wird es {dunkel}.', 'Artikelprobe: „das dunkel“? Passt nicht. „dunkel“ sagt, wie es wird.'],
+      ['Der {große} Hund schläft.', 'Falle! „Der“ zeigt weiter: der große was? Der große Hund. „große“ sagt nur, wie der Hund ist.'],
+      ['Eine {kleine} Katze miaut.', 'Falle! „Eine“ zeigt weiter: eine kleine was? Eine kleine Katze. „kleine“ bleibt klein.'],
+      ['Wir spielen {gern} Fußball.', 'Artikelprobe: „das gern“? Passt nicht.'],
+      ['Ich {esse} gern Nudeln.', 'Hier sagt „esse“, was ich tue. Kein Begleiter zeigt darauf, also klein.'],
+    ],
+  };
+  const ROUND = 10;
+  const R = {tasks:[], i:0};
+  const cur = () => R.tasks[R.i];
+  function mkOne([src, why], big){
+    const m = src.match(/^(.*)\{(.+)\}(.*)$/), w = m[2];
+    return {type:'one', pre:m[1], post:m[3], ans:w, opts:[capF(w), w.charAt(0).toLowerCase() + w.slice(1)], big, why, st:{}, done:false, firstOk:true, msg:'', cls:''};
+  }
+  function mkSent(x){
+    return {type:'sent', toks:x.toks, up:x.toks.map(() => false), bad:new Set(), show:false, done:false, firstOk:true, msg:'', cls:''};
+  }
+  function newRound(){
+    const trap = shuffle(ONE.small.filter(x => x[1].startsWith('Falle')))[0];
+    const small = [trap, ...shuffle(ONE.small.filter(x => x !== trap)).slice(0, 2)].map(x => mkOne(x, false));
+    const big = shuffle(ONE.big).slice(0, 4).map(x => mkOne(x, true));
+    const ones = shuffle([...small, ...big]);
+    const sents = shuffle(SENT).slice(0, 3).map(mkSent);
+    R.tasks = [ones[0], ones[1], sents[0], ones[2], ones[3], sents[1], ones[4], ones[5], ones[6], sents[2]];
+    R.i = 0; render();
+  }
+
+  function render(){
+    const t = cur();
+    let h = '';
+    if (t.type === 'one'){
+      h += `<p class="task">Groß oder klein?</p>`;
+      h += `<p class="qs">${t.pre}<span class="blank">${t.done ? t.ans : ' '}</span>${t.post}</p>`;
+      h += `<div class="ops">${t.opts.map((o, k) => `<button type="button" class="op${t.st[k] ? ' ' + t.st[k] : ''}" data-o="${k}"${t.done || t.st[k] === 'wrong' ? ' disabled' : ''}>${o}</button>`).join('')}</div>`;
+    } else {
+      h += `<p class="task">Tipp auf jedes Wort, das groß geschrieben wird. Auch auf das erste.</p>`;
+      const v = t.show || t.done ? proofView(t.toks, 3) : {up:t.up, cls:t.toks.map(() => ''), bub:null};
+      if (t.show || t.done){ v.up = t.done ? v.up : t.up; v.jump = new Set(); }
+      if (!t.done){
+        v.tap = true;
+        v.cls = v.cls.map((c, k) => c + (t.bad.has(k) ? ' bad' : ''));
+      }
+      h += `<div class="sent" id="qsent">${sentHTML(t.toks, v)}</div>`;
+      if (!t.done) h += `<div class="controls"><button class="btn" id="qcheck" type="button">Prüfen</button><button class="btn ghost" id="qhint" type="button">Zeig's mir</button></div>`;
+    }
+    h += `<p class="say ${t.cls}" id="qsay" aria-live="polite">${t.msg}</p>`;
+    if (t.done) h += `<div class="controls"><button class="btn" id="qnext" type="button">${R.i + 1 < ROUND ? 'Nächste Aufgabe' : 'Fertig'}</button></div>`;
+    $('#qbody').innerHTML = h;
+    if (t.type === 'sent' && (t.show || t.done)) drawArcs($('#qsent'), t.toks);
+    wire(t); top();
+  }
+  function top(){
+    $('#qpos').textContent = `Aufgabe ${Math.min(R.i + 1, ROUND)} von ${ROUND}`;
+    $('#qscore').textContent = `Sofort richtig: ${R.tasks.filter(x => x.done && x.firstOk).length}`;
+    $('#qbar').style.width = `${(R.i + (cur().done ? 1 : 0)) / ROUND * 100}%`;
+  }
+  function wire(t){
+    $$('#qbody [data-o]').forEach(b => b.addEventListener('click', () => {
+      if (t.done) return;
+      const k = +b.dataset.o, ok = (k === 0) === t.big;
+      if (!ok){ t.firstOk = false; t.st[k] = 'wrong'; t.cls = 'no'; t.msg = `Noch nicht. ${t.why}`; render(); return; }
+      t.st[k] = 'right'; t.done = true; t.ans = t.opts[k]; t.cls = 'ok'; t.msg = `Richtig! ${t.why}`;
+      render(); const nx = $('#qnext'); if (nx) nx.focus({preventScroll:true});
+    }));
+    $$('#qbody button.wd').forEach(b => b.addEventListener('click', () => {
+      const k = +b.dataset.w; t.up[k] = !t.up[k]; t.bad.delete(k); render();
+      const nb = $(`#qbody [data-w="${k}"]`); if (nb) nb.focus({preventScroll:true});
+    }));
+    const chk = $('#qcheck');
+    if (chk) chk.addEventListener('click', () => {
+      const miss = t.toks.filter(x => x.big && !t.up[x.i]).length;
+      const extra = t.toks.filter(x => !x.big && t.up[x.i]);
+      if (!miss && !extra.length){
+        t.done = true; t.cls = 'ok'; t.msg = `Richtig! ${t.firstOk ? 'Alles auf Anhieb. ' : ''}Die Linien zeigen die Proben: Satzanfang, Begleiter und Artikelprobe.`;
+        render(); const nx = $('#qnext'); if (nx) nx.focus({preventScroll:true}); return;
+      }
+      t.firstOk = false; t.bad = new Set(extra.map(x => x.i)); t.cls = 'no';
+      const parts = [];
+      if (extra.length) parts.push(`${extra.length === 1 ? 'Das rot markierte Wort bleibt' : 'Die rot markierten Wörter bleiben'} klein. Mach die Artikelprobe.`);
+      if (miss) parts.push(`${miss === 1 ? 'Ein Wort fehlt' : `${miss} Wörter fehlen`} noch. Hast du an den Satzanfang und an die Begleiter gedacht?`);
+      t.msg = `Noch nicht ganz. ${parts.join(' ')}`;
+      render();
+    });
+    const hint = $('#qhint');
+    if (hint) hint.addEventListener('click', () => {
+      t.show = true; t.firstOk = false; t.cls = '';
+      t.msg = `${proofText(t.toks, 1)} ${proofText(t.toks, 2)} ${proofText(t.toks, 3)}`;
+      render();
+    });
+    const nx = $('#qnext');
+    if (nx) nx.addEventListener('click', () => { R.i++; R.i < ROUND ? render() : finish(); });
+  }
+  function finish(){
+    const ok = R.tasks.filter(x => x.firstOk).length;
+    $('#qbody').innerHTML = `<p class="done">Geschafft! ${ok} von ${ROUND} Aufgaben waren sofort richtig.</p>
+      <div class="controls"><button class="btn" id="again" type="button">Neue Runde</button></div>`;
+    $('#qpos').textContent = `${ROUND} von ${ROUND}`; $('#qbar').style.width = '100%';
+    $('#again').addEventListener('click', newRound);
+  }
+
+  heroDraw(); newRound();
+  let rt = 0;
+  addEventListener('resize', () => {
+    clearTimeout(rt);
+    rt = setTimeout(() => {
+      if (S.step >= 2) drawArcs($('#s-sent'), HERO[S.k].toks);
+      const q = $('#qsent'), t = cur(); if (q && t && (t.show || t.done)) drawArcs(q, t.toks);
+    }, 120);
+  });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (S.step >= 2) drawArcs($('#s-sent'), HERO[S.k].toks); });
+})();
+</script>
+</body>
+</html>

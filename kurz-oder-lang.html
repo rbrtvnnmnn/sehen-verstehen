@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kurz oder lang?</title>
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+/* Layout: same Karopapier world. Word pairs (Miete/Mitte) with sound bars, marks and syllable arcs; rule cards; 10-task round (first: short or long? then: which letters?). */
+:root{
+  --paper:#fbfcff; --grid:#e3e9f5; --ink:#1a2342; --ink-soft:#56607c;
+  --pen:#2447c9; --pen-ink:#ffffff; --card:#ffffff; --line:#cdd6ea;
+  --long:#c25400; --short:#16796d; --ok:#1f8a4c; --no:#c2410c;
+  --display:"Bricolage Grotesque","Avenir Next","Trebuchet MS",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+  --u:34px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#17241e; --grid:#20322a; --ink:#eef4ef; --ink-soft:#a7b8ae;
+    --pen:#9db8ff; --pen-ink:#0f1830; --card:#1e2f27; --line:#33493e;
+    --long:#ffb35c; --short:#5fd8c8; --ok:#5fd08d; --no:#ff9a62; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#17241e; --grid:#20322a; --ink:#eef4ef; --ink-soft:#a7b8ae;
+  --pen:#9db8ff; --pen-ink:#0f1830; --card:#1e2f27; --line:#33493e;
+  --long:#ffb35c; --short:#5fd8c8; --ok:#5fd08d; --no:#ff9a62; color-scheme:dark;
+}
+body{
+  margin:0; background-color:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:20px 20px;
+  color:var(--ink); font-family:var(--body); font-size:17px; line-height:1.5;
+}
+[hidden]{display:none!important}
+.wrap{
+  max-width:980px; margin:0 auto; display:grid; gap:44px;
+  padding-block:28px 72px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+h1,h2,h3{font-family:var(--display); text-wrap:balance; margin:0; line-height:1.08}
+h1{font-size:clamp(38px,7vw,58px); font-weight:800; letter-spacing:-.02em}
+h2{font-size:clamp(24px,4vw,32px); font-weight:750}
+p{margin:0}
+a{color:var(--pen)}
+.lede{font-size:19px; color:var(--ink-soft); max-width:54ch; margin-top:10px}
+.eyebrow{font:700 13px/1 var(--body); letter-spacing:.09em; text-transform:uppercase; color:var(--pen)}
+.sec-head{display:grid; gap:10px; max-width:62ch}
+.card{
+  background:var(--card); border:1.5px solid var(--line); border-radius:22px;
+  box-shadow:5px 5px 0 var(--line); padding:clamp(18px,3.5vw,32px); min-width:0;
+  display:grid; gap:18px;
+}
+.lg{color:var(--long)} .sh{color:var(--short)}
+.hint-line{color:var(--ink-soft); font-size:15px}
+.out{font-size:19px; max-width:62ch; min-height:1.6em}
+
+/* marks: long = bar, short = dot (under the vowel) */
+.mk{position:relative; display:inline-block}
+.marked .mk::after{content:""; position:absolute; animation:pop .3s both}
+.marked .mk.long::after{left:2px; right:2px; bottom:-.08em; height:.09em; min-height:4px; border-radius:3px; background:var(--long)}
+.marked .mk.short::after{left:50%; bottom:-.2em; width:.17em; height:.17em; min-width:8px; min-height:8px; margin-left:-.085em; border-radius:50%; background:var(--short)}
+.marked .mk.long{color:var(--long)} .marked .mk.short{color:var(--short)}
+@keyframes pop{from{transform:scale(.3); opacity:0}}
+
+/* sound bar: one box per sound, width = how long it sounds */
+.band{display:flex; gap:3px; flex-wrap:nowrap; min-height:46px}
+.seg{
+  position:relative; width:calc(var(--w) * var(--u)); height:46px; flex:none;
+  border:2px solid var(--line); border-radius:10px; overflow:hidden; background:var(--paper);
+  display:grid; place-items:center; font:800 19px/1 var(--display);
+}
+.seg i{position:absolute; inset:0; transform:scaleX(0); transform-origin:left; background:color-mix(in srgb,var(--ink-soft) 20%,transparent)}
+.seg.long{border-color:var(--long)} .seg.long i{background:color-mix(in srgb,var(--long) 38%,transparent)}
+.seg.short{border-color:var(--short)} .seg.short i{background:color-mix(in srgb,var(--short) 38%,transparent)}
+.seg b{position:relative}
+.band.full .seg i{transform:scaleX(1)}
+.band.play .seg i{animation:fillx var(--d) linear var(--dl) both}
+@keyframes fillx{from{transform:scaleX(0)} to{transform:scaleX(1)}}
+
+/* pairs */
+.pairs{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px}
+.pw{border:1.5px solid var(--line); border-radius:18px; padding:18px; display:grid; gap:16px; align-content:start; min-width:0}
+.pw-top{display:flex; align-items:center; gap:12px; flex-wrap:wrap}
+.word{font:800 clamp(40px,8vw,58px)/1.15 var(--display); letter-spacing:.01em}
+.tag{font:700 13px/1 var(--body); letter-spacing:.08em; text-transform:uppercase; padding:5px 9px; border-radius:99px; border:1.5px solid currentColor}
+.syl{display:flex; gap:10px; font:800 clamp(28px,5vw,36px)/1.1 var(--display); flex-wrap:wrap}
+.sy{position:relative; padding:0 8px 16px; animation:pop .35s both}
+.sy+.sy{animation-delay:.5s}
+.sy::after{content:""; position:absolute; left:2px; right:2px; bottom:0; height:13px; border:3px solid var(--pen); border-top:0; border-radius:0 0 50% 50% / 0 0 100% 100%}
+.sy em{font-style:normal; border-radius:6px; padding:0 2px}
+.sy em.wall{background:color-mix(in srgb,var(--short) 22%,transparent); color:var(--short)}
+.sy em.open{background:color-mix(in srgb,var(--long) 20%,transparent); color:var(--long)}
+.why{font-size:17px}
+.chips{display:flex; flex-wrap:wrap; gap:8px; align-items:center}
+.chips .lbl{font-size:14px; color:var(--ink-soft)}
+.chip{
+  font:600 15px/1 var(--display); color:var(--ink); background:var(--paper);
+  border:1.5px solid var(--line); border-radius:999px; padding:7px 12px; cursor:pointer;
+}
+.chip:hover,.chip.sel{border-color:var(--pen); color:var(--pen)}
+
+/* speak buttons: only shown if the device has a German voice of its own */
+.spk{display:none}
+.can-speak .spk{display:inline-flex}
+.spk{
+  align-items:center; gap:6px; font:700 15px/1 var(--display); color:var(--pen); background:transparent;
+  border:1.5px solid var(--line); border-radius:999px; padding:7px 12px; cursor:pointer;
+}
+.spk:hover{border-color:var(--pen)}
+
+/* rules */
+.rules{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-top:14px}
+.rule{background:var(--card); border:1.5px solid var(--line); border-radius:16px; padding:18px; display:grid; gap:10px; align-content:start; min-width:0}
+.rule .kind{font:700 13px/1 var(--body); letter-spacing:.06em; text-transform:uppercase; color:var(--ink-soft)}
+.rule .verdict{font:800 22px/1.2 var(--display)}
+.rule p{font-size:16px}
+.rule b{font-family:var(--display)}
+.tree{display:grid; gap:6px; font-size:16px}
+.tree div{display:flex; gap:8px; align-items:baseline}
+.tree .to{font:800 20px/1 var(--display); min-width:2.2ch}
+
+/* trainer */
+.qtop{display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; font:700 15px/1 var(--display); color:var(--ink-soft)}
+.bar-p{height:8px; border-radius:99px; background:var(--line); overflow:hidden; margin-top:8px}
+.bar-p i{display:block; height:100%; width:0; background:var(--pen); border-radius:99px; transition:width .3s}
+.task{font-size:clamp(20px,3vw,24px); line-height:1.5; max-width:46ch; font-weight:700}
+.qword{display:flex; align-items:center; gap:16px; flex-wrap:wrap}
+.qw{font:800 clamp(40px,8vw,56px)/1.2 var(--display)}
+.qw .art{color:var(--ink-soft); font-weight:600; margin-right:.25em}
+.qw .vm{border-bottom:.08em dotted var(--ink-soft)}
+.gap{
+  display:inline-block; min-width:1.1ch; text-align:center; color:var(--ink-soft);
+  border-bottom:.07em dashed var(--pen); margin:0 .04em;
+}
+.gap.fill{color:var(--ok); border-bottom-color:transparent; animation:pop .3s both}
+.ops{display:grid; grid-template-columns:repeat(var(--n,2),minmax(0,1fr)); gap:10px; max-width:520px}
+.op{
+  font:750 clamp(20px,3vw,26px)/1.2 var(--display);
+  padding:12px; border-radius:14px; border:2px solid var(--line); background:var(--paper); color:var(--ink); cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:10px;
+}
+.op:hover{border-color:var(--pen)}
+.op.right{border-color:var(--ok); background:color-mix(in srgb,var(--ok) 14%,var(--card)); color:var(--ok)}
+.op.wrong{border-color:var(--no); color:var(--no); opacity:.7}
+.op:disabled{cursor:default}
+.op .dot{width:12px; height:12px; border-radius:50%; background:var(--short)}
+.op .dash{width:30px; height:5px; border-radius:3px; background:var(--long)}
+.say{font-size:19px; min-height:1.6em; max-width:62ch}
+.say.ok{color:var(--ok)} .say.no{color:var(--no)}
+.done{font:750 clamp(26px,5vw,38px)/1.15 var(--display)}
+.stage{display:grid; gap:16px}
+.controls{display:flex; flex-wrap:wrap; gap:10px; align-items:center}
+/* Pulsing ring on the button that reveals the next step. */
+.nudge:not(:disabled){animation:nudge 1.8s ease-out infinite}
+@keyframes nudge{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--pen) 55%,transparent)}70%,100%{box-shadow:0 0 0 12px color-mix(in srgb,var(--pen) 0%,transparent)}}
+.btn{
+  font:700 19px/1 var(--display); border-radius:14px; padding:14px 22px; cursor:pointer;
+  border:2px solid var(--pen); background:var(--pen); color:var(--pen-ink);
+}
+.btn:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent; color:var(--pen)}
+.btn:focus-visible,.chip:focus-visible,.op:focus-visible,.spk:focus-visible{outline:3px solid var(--pen); outline-offset:2px}
+
+footer{color:var(--ink-soft); font-size:15px; display:flex; flex-wrap:wrap; gap:6px 18px}
+
+@media (max-width:760px){
+  .rules{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:640px){
+  :root{--u:28px}
+  .pairs{grid-template-columns:minmax(0,1fr)}
+  .btn{font-size:17px; padding:12px 18px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important; animation:none!important}
+  .band.play .seg i{transform:scaleX(1)}
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <div class="eyebrow">Rechtschreibung</div>
+    <h1>Kurz oder lang?</h1>
+    <p class="lede">Wer nur nach Gehör schreibt, schreibt schnell „Bine“ statt „Biene“ oder „Waser“ statt „Wasser“. Dabei verrät das Ohr die Regel. Du musst nur auf eine Sache achten: Klingt der Selbstlaut kurz oder lang?</p>
+  </header>
+
+  <section class="card" aria-labelledby="pair-title">
+    <div class="sec-head">
+      <div class="eyebrow">Hör genau hin</div>
+      <h2 id="pair-title">Zwei Wörter, fast gleich</h2>
+      <p>Selbstlaute sind a, e, i, o, u und ä, ö, ü. Alle anderen Buchstaben sind Mitlaute. Diese zwei Wörter unterscheiden sich nur darin, wie lang der Selbstlaut klingt. Und genau das sieht man an der Schreibweise.</p>
+    </div>
+    <div class="chips" id="w-chips"><span class="lbl">Wortpaar:</span></div>
+    <div class="pairs" id="w-pairs"></div>
+    <p class="out" id="w-out" aria-live="polite"></p>
+    <div class="controls"><button class="btn" type="button" id="w-next"></button></div>
+  </section>
+
+  <section aria-labelledby="rule-title">
+    <div class="sec-head">
+      <div class="eyebrow">Merke</div>
+      <h2 id="rule-title">Erst hören, dann schreiben</h2>
+      <p>Sprich das Wort langsam und frag dich: Kurz oder lang? Dann weißt du, wie es weitergeht.</p>
+    </div>
+    <div class="rules">
+      <div class="rule">
+        <span class="kind">Kurz <span class="sh">●</span></span>
+        <span class="verdict sh">Hörst du nur einen Mitlaut, schreib ihn doppelt.</span>
+        <p>Nach einem kurzen Selbstlaut kommen zwei Mitlaute: Ki<b>nd</b>, Hu<b>nd</b>, Wo<b>lk</b>e. Hörst du nur einen, verdoppelst du ihn: So<b>nn</b>e, Mu<b>tt</b>er, Wa<b>ss</b>er.</p>
+        <p>Statt kk schreibt man <b>ck</b> (Decke), statt zz schreibt man <b>tz</b> (Katze). Ausnahme: kleine Wörter wie mit, bis, das, was, im.</p>
+      </div>
+      <div class="rule">
+        <span class="kind">Lang <span class="lg">▬</span></span>
+        <span class="verdict lg">Nach einem langen Selbstlaut wird nie verdoppelt.</span>
+        <p>O<b>f</b>en, Na<b>m</b>e, Blu<b>m</b>e. Und ein langes i schreibt man fast immer <b>ie</b>: Biene, Brief, Spiegel.</p>
+        <p>Merkwörter mit langem i ohne e: mir, dir, wir, Igel, Tiger, Kino.</p>
+      </div>
+      <div class="rule">
+        <span class="kind" style="text-transform:none">s, ss oder ß?</span>
+        <span class="verdict">Erst kurz oder lang, dann summt oder zischt.</span>
+        <div class="tree">
+          <div><span class="to sh">ss</span><span>kurz: Wasser, Kissen, Tasse</span></div>
+          <div><span class="to lg">ß</span><span>lang und zischend: Straße, Soße, grüßen</span></div>
+          <div><span class="to lg">s</span><span>lang und summend wie eine Biene: Rose, Hase, lesen</span></div>
+        </div>
+        <p>Nach au, ei und eu ist es wie nach einem langen Selbstlaut: drau<b>ß</b>en, hei<b>ß</b>en, aber Mei<b>s</b>e.</p>
+      </div>
+      <div class="rule">
+        <span class="kind">Am Wortende</span>
+        <span class="verdict">Verlängere das Wort.</span>
+        <p>Am Ende zischt jedes s. Sprich das Wort länger, dann hörst du es:</p>
+        <div class="tree">
+          <div><span class="to lg">ß</span><span>Fuß → Fü<b>ß</b>e (zischt)</span></div>
+          <div><span class="to lg">s</span><span>Gras → Grä<b>s</b>er (summt)</span></div>
+          <div><span class="to sh">ss</span><span>Fluss → Flü<b>ss</b>e (kurz)</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="q-title">
+    <div class="eyebrow">Jetzt du</div>
+    <h2 id="q-title">10 Wörter mit Lücke</h2>
+    <p class="hint-line">Immer in zwei Schritten: Erst hören, ob der Selbstlaut kurz oder lang ist. Dann die fehlenden Buchstaben wählen.</p>
+    <div>
+      <div class="qtop"><span id="qpos"></span><span id="qscore"></span></div>
+      <div class="bar-p"><i id="qbar"></i></div>
+    </div>
+    <div id="qbody" class="stage"></div>
+  </section>
+
+  <footer>
+    <a href="index.html">← Alle Übungen</a>
+    <span>Weiter:</span>
+    <a href="gross-oder-klein.html">Groß oder klein?</a>
+  </footer>
+</main>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+  const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const shuffle = arr => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const isV = s => /^[aeiouäöüy]/i.test(s);
+  const T = .3; // seconds per sound unit in the sound bar
+
+  // ---------- speech: only voices on the device itself, nothing is sent anywhere ----------
+  const SP = {voice:null};
+  const hasSpeech = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+  function findVoice(){
+    const vs = speechSynthesis.getVoices().filter(v => /^de/i.test(v.lang) && v.localService);
+    SP.voice = vs.find(v => /de[-_]DE/i.test(v.lang)) || vs[0] || null;
+    document.body.classList.toggle('can-speak', !!SP.voice);
+  }
+  if (hasSpeech){ findVoice(); speechSynthesis.onvoiceschanged = findVoice; }
+  function speak(list, rate = .75){
+    if (!SP.voice) return;
+    speechSynthesis.cancel();
+    [].concat(list).forEach(text => {
+      const u = new SpeechSynthesisUtterance(text); u.voice = SP.voice; u.lang = SP.voice.lang; u.rate = rate;
+      speechSynthesis.speak(u);
+    });
+  }
+
+  // ---------- sound bar ----------
+  // segs: [{t:'ie', m:'long'|'short'|''}]
+  const dur = s => s.m === 'long' ? 2.6 : s.m === 'short' ? 1 : isV(s.t) ? .8 : .8 + .2 * (s.t.length - 1);
+  function bandHTML(segs, cls = ''){
+    let t0 = 0;
+    return `<div class="band ${cls}" aria-hidden="true">` + segs.map(s => {
+      const d = dur(s), h = `<span class="seg ${s.m}" style="--w:${d};--dl:${(t0 * T).toFixed(2)}s;--d:${(d * T).toFixed(2)}s"><i></i><b>${s.t}</b></span>`;
+      t0 += d; return h;
+    }).join('') + `</div>`;
+  }
+  const runs = str => (str.match(/[aeiouäöüy]+|[^aeiouäöüy]+/gi) || []).map(t => ({t, m:''}));
+  function replay(el){ if (!el) return; el.classList.remove('play', 'full'); void el.offsetWidth; el.classList.add('play'); }
+
+  // ---------- word pairs ----------
+  const PAIRS = [
+    [{g:'M|ie_|t|e', syl:'Mie-te'}, {g:'M|i.|tt|e', syl:'Mit-te'}],
+    [{g:'O_|f|e|n', syl:'O-fen'}, {g:'o.|ff|e|n', syl:'of-fen'}],
+    [{g:'H|a_|s|e|n', syl:'Ha-sen'}, {g:'h|a.|ss|e|n', syl:'has-sen'}],
+    [{g:'M|a_|ß|e', syl:'Ma-ße'}, {g:'M|a.|ss|e', syl:'Mas-se'}],
+    [{g:'H|ü_|t|e', syl:'Hü-te'}, {g:'H|ü.|tt|e', syl:'Hüt-te'}],
+    [{g:'b|ie_|t|e|n', syl:'bie-ten'}, {g:'b|i.|tt|e|n', syl:'bit-ten'}],
+  ].map(p => p.map(x => {
+    const segs = x.g.split('|').map(s => ({t:s.replace(/[_.]$/, ''), m:s.endsWith('_') ? 'long' : s.endsWith('.') ? 'short' : ''}));
+    const v = segs.find(s => s.m), syl = x.syl.split('-');
+    return {segs, syl, w:segs.map(s => s.t).join(''), v:v.t.toLowerCase(), long:v.m === 'long', c:syl[1][0]};
+  }));
+  const W = {p:0, step:0};
+  const NEXT = ['Anhören', 'Markieren', 'Silben schwingen', 'Nochmal von vorn'];
+
+  function sylHTML(x){
+    const [a, b] = x.syl;
+    if (!x.long) return `<span class="sy">${a.slice(0, -1)}<em class="wall">${a.slice(-1)}</em></span><span class="sy"><em class="wall">${b[0]}</em>${b.slice(1)}</span>`;
+    const n = x.v.length;
+    return `<span class="sy">${a.slice(0, -n)}<em class="open">${a.slice(-n)}</em></span><span class="sy">${b}</span>`;
+  }
+  function whyText(x){
+    return x.long
+      ? `${x.syl.join('-')}: Die erste Silbe hört mit dem langen ${x.v} auf. Danach kommt nur ein ${x.c}.`
+      : `${x.syl.join('-')}: Das kurze ${x.v} wird sofort vom ${x.c} gestoppt. Das ${x.c} gehört zu beiden Silben, darum schreibt man ${x.c}${x.c}.`;
+  }
+  function pairDraw(){
+    const [L, S] = PAIRS[W.p], st = W.step;
+    $('#w-pairs').innerHTML = [L, S].map((x, k) => `<div class="pw${st >= 2 ? ' marked' : ''}">
+      <div class="pw-top"><span class="word">${x.segs.map(s => s.m ? `<span class="mk ${s.m}">${s.t}</span>` : s.t).join('')}</span>
+        ${st >= 2 ? `<span class="tag ${x.long ? 'lg' : 'sh'}">${x.long ? 'lang' : 'kurz'}</span>` : ''}
+        <button class="spk" type="button" data-say="${k}" aria-label="${x.w} anhören">🔊</button></div>
+      ${st >= 1 ? bandHTML(x.segs, 'full') : ''}
+      ${st >= 3 ? `<div class="syl">${sylHTML(x)}</div><p class="why">${whyText(x)}</p>` : ''}
+    </div>`).join('');
+    $$('#w-pairs [data-say]').forEach(b => b.addEventListener('click', () => {
+      const k = +b.dataset.say; speak(PAIRS[W.p][k].w);
+      replay($$('#w-pairs .band')[k]);
+    }));
+    const msg = [
+      'Lies beide Wörter laut. Wo ist der Unterschied?',
+      `Hör genau hin: Bei „${L.w}“ klingt das ${L.v} lang, bei „${S.w}“ ist das ${S.v} kurz. Die Kästchen zeigen, wie lange jeder Laut dauert.`,
+      'Lang bekommt einen Strich, kurz einen Punkt. Schau, was nach dem Selbstlaut kommt.',
+      'Schwing die Silben mit und klatsch dazu. Beim kurzen Selbstlaut gehört der Mitlaut zu beiden Silben.',
+    ][st];
+    $('#w-out').textContent = msg;
+    const nb = $('#w-next'); nb.textContent = NEXT[st]; nb.classList.toggle('nudge', st < 3);
+    $$('#w-chips .chip').forEach((c, i) => c.classList.toggle('sel', i === W.p));
+  }
+  PAIRS.forEach((p, i) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip'; b.textContent = `${p[0].w} – ${p[1].w}`;
+    b.addEventListener('click', () => { W.p = i; W.step = 0; pairDraw(); });
+    $('#w-chips').appendChild(b);
+  });
+  $('#w-next').addEventListener('click', () => {
+    W.step = (W.step + 1) % 4; pairDraw();
+    if (W.step === 1){ $$('#w-pairs .band').forEach(replay); speak(PAIRS[W.p].map(x => x.w)); }
+  });
+
+  // ---------- trainer ----------
+  // [x] = the vowel to listen to, {x} = the gap. After "|": the longer form of the word.
+  const IE = {
+    long:['die B{ie}ne', 'der Br{ie}f', 'das L{ie}d', 'der Sp{ie}gel', 'die Z{ie}ge', 'die Fl{ie}ge', 't{ie}f', 'v{ie}l', 'das Sp{ie}l', 's{ie}ben', 'l{ie}gen', 'der R{ie}se', 'das T{ie}r', 'die W{ie}se'],
+    short:['das K{i}nd', 'der W{i}nd', 'der T{i}sch', 'der F{i}sch', 'die M{i}lch', 'die K{i}ste', 'das Sch{i}ff', 'der R{i}ng', 'der F{i}nger', 'der W{i}nter', 'das B{i}ld', 'das L{i}cht'],
+  };
+  const SS = {
+    ss:['das W[a]{ss}er', 'die T[a]{ss}e', 'das M[e]{ss}er', 'das K[i]{ss}en', 'die Sch[ü]{ss}el', '[e]{ss}en', 'der Fl[u]{ss}|Flüsse', 'der K[u]{ss}|Küsse', 'die N[u]{ss}|Nüsse', 'n[a]{ss}|nasse', 'die Kl[a]{ss}e'],
+    sz:['die Str[a]{ß}e', 'die S[o]{ß}e', 'die F[ü]{ß}e', 'gr[ü]{ß}en', 'der F[u]{ß}|Füße', 'gr[o]{ß}|größer', 's[ü]{ß}|süße', 'der Gr[u]{ß}|Grüße', 'der Kl[o]{ß}|Klöße'],
+    s:['die R[o]{s}e', 'die N[a]{s}e', 'die H[o]{s}e', 'der H[a]{s}e', 'l[e]{s}en', 'der B[e]{s}en', 'die V[a]{s}e', 'das Gr[a]{s}|Gräser', 'das Gl[a]{s}|Gläser', 'die D[o]{s}e'],
+  };
+  const DB = {
+    short:['die S[o]{nn}e', 'die M[u]{tt}er', 'der H[a]{mm}er', 'der T[e]{ll}er', 'die P[u]{pp}e', 'die S[u]{pp}e', 'k[o]{mm}en', 'schw[i]{mm}en', 'die W[o]{ll}e', 'die K[a]{nn}e', 'der L[ö]{ff}el', '[o]{ff}en', 'der H[i]{mm}el'],
+    long:['der [O]{f}en', 'der N[a]{m}e', 'die Bl[u]{m}e', 'die Sch[u]{l}e', 'die Kr[o]{n}e', 'l[e]{b}en', 'die Tom[a]{t}e', 'die H[ü]{t}e', 'der B[o]{d}en'],
+  };
+  function parse(src, kind){
+    const [txt, ext] = src.split('|');
+    const m = txt.match(/^(.*?)(?:\[(.+?)\])?\{(.+?)\}(.*)$/);
+    const pre = m[1], v = m[2] || '', ans = m[3], post = m[4];
+    const sp = pre.lastIndexOf(' '), lead = pre.slice(0, sp + 1), wpre = pre.slice(sp + 1);
+    const long = kind === 'ie' ? ans === 'ie' : kind === 's' ? ans !== 'ss' : ans.length === 1;
+    const opts = kind === 'ie' ? ['i', 'ie'] : kind === 's' ? ['s', 'ss', 'ß'] : [ans[0], ans[0] + ans[0]];
+    return {kind, lead, wpre, v, ans, post, ext, long, opts, vn:kind === 'ie' ? 'i' : v.toLowerCase(), c:ans[0],
+      full:pre + v + ans + post, word:wpre + v + ans + post};
+  }
+  const ROUND = 10;
+  const R = {tasks:[], i:0};
+  const cur = () => R.tasks[R.i];
+  function newRound(){
+    const ie = [...shuffle(IE.long).slice(0, 2), ...shuffle(IE.short).slice(0, 2)].map(s => parse(s, 'ie'));
+    const ss = [pick(SS.ss), pick(SS.sz), pick(SS.s)].map(s => parse(s, 's'));
+    const db = shuffle([pick(DB.short), pick(DB.long), pick(Math.random() < .5 ? DB.short : DB.long)]).map(s => parse(s, 'db'));
+    const all = [...ie, ...ss, ...db];
+    // no two identical words in one round
+    const seen = new Set();
+    R.tasks = shuffle(all.filter(x => !seen.has(x.word) && seen.add(x.word))).slice(0, ROUND).map(it => ({it, a:false, aSt:{}, bSt:{}, done:false, firstOk:true, msg:'', cls:''}));
+    while (R.tasks.length < ROUND){ const it = parse(pick(IE.short), 'ie'); if (!seen.has(it.word)){ seen.add(it.word); R.tasks.push({it, a:false, aSt:{}, bSt:{}, done:false, firstOk:true, msg:'', cls:''}); } }
+    R.i = 0; render();
+  }
+  function bandOf(it, solved){
+    const vSeg = {t:it.kind === 'ie' ? (solved ? it.ans : '?') : it.v, m:it.long ? 'long' : 'short'};
+    const segs = [...runs(it.wpre), vSeg];
+    if (it.kind !== 'ie') segs.push({t:solved ? it.ans : '?', m:''});
+    return [...segs, ...runs(it.post)];
+  }
+  function wordHTML(t){
+    const it = t.it, solved = t.done;
+    const gap = `<span class="gap${solved ? ' fill' : ''}">${solved ? it.ans : '?'}</span>`;
+    const mark = s => t.a ? `<span class="mk ${it.long ? 'long' : 'short'}">${s}</span>` : s;
+    const body = it.kind === 'ie' ? mark(gap) : `${mark(`<span class="vm">${it.v}</span>`)}${gap}`;
+    return `<span class="qw${t.a ? ' marked' : ''}">${it.lead ? `<span class="art">${it.lead.trim()}</span>` : ''}${it.wpre}${body}${it.post}</span>`;
+  }
+  function render(){
+    const t = cur(), it = t.it;
+    let h = `<p class="task">${t.a ? (t.done ? 'Geschafft.' : 'Welche Buchstaben fehlen?') : `Sprich das Wort leise. Klingt das ${it.vn} kurz oder lang?`}</p>`;
+    h += `<div class="qword">${wordHTML(t)}<button class="spk" type="button" id="qspk">🔊 Anhören</button></div>`;
+    if (t.a) h += bandHTML(bandOf(it, t.done), t.fresh ? '' : 'full');
+    h += `<div class="ops" style="--n:2">` + ['short', 'long'].map(k => `<button type="button" class="op${t.aSt[k] ? ' ' + t.aSt[k] : ''}" data-a="${k}"${t.a || t.aSt[k] === 'wrong' ? ' disabled' : ''}>${k === 'short' ? '<span class="dot"></span>kurz' : '<span class="dash"></span>lang'}</button>`).join('') + `</div>`;
+    if (t.a) h += `<div class="ops" style="--n:${it.opts.length}">` + it.opts.map(o => `<button type="button" class="op${t.bSt[o] ? ' ' + t.bSt[o] : ''}" data-b="${o}"${t.done || t.bSt[o] === 'wrong' ? ' disabled' : ''}>${o}</button>`).join('') + `</div>`;
+    h += `<p class="say ${t.cls}" id="qsay" aria-live="polite">${t.msg}</p>`;
+    if (t.done) h += `<div class="controls"><button class="btn" id="qnext" type="button">${R.i + 1 < ROUND ? 'Nächstes Wort' : 'Fertig'}</button></div>`;
+    $('#qbody').innerHTML = h;
+    if (t.fresh){ replay($('#qbody .band')); t.fresh = false; }
+    wire(t); top();
+  }
+  function top(){
+    $('#qpos').textContent = `Wort ${Math.min(R.i + 1, ROUND)} von ${ROUND}`;
+    $('#qscore').textContent = `Sofort richtig: ${R.tasks.filter(x => x.done && x.firstOk).length}`;
+    $('#qbar').style.width = `${(R.i + (cur().done ? 1 : 0)) / ROUND * 100}%`;
+  }
+  function rightMsg(it){
+    const ext = it.ext ? `Verlängere: ${it.ext}. ` : '';
+    if (it.kind === 'ie') return it.long ? `Richtig! Ein langes i schreibt man fast immer ie: ${it.full}.` : `Richtig! Das i ist kurz, also kein e dahinter: ${it.full}.`;
+    if (it.kind === 's') return it.ans === 'ss' ? `Richtig! Nach einem kurzen Selbstlaut schreibt man ss: ${it.full}.`
+      : it.ans === 'ß' ? `Richtig! ${ext}Lang und zischend, also ß: ${it.full}.`
+      : `Richtig! ${ext}Lang und summend, also s: ${it.full}.`;
+    return it.long ? `Richtig! Nach einem langen Selbstlaut wird nie verdoppelt: ${it.full}.`
+      : `Richtig! Kurzes ${it.vn}, und man hört nur ein ${it.c}. Also doppelt: ${it.full}.`;
+  }
+  function wrongMsg(it, o){
+    if (it.kind === 'ie') return it.long ? 'Das i ist lang. Ein langes i schreibt man fast immer ie.' : 'Das i ist kurz. Ein e dahinter würde es lang machen.';
+    if (it.kind === 's'){
+      if (!it.long) return 'Der Selbstlaut ist kurz. Danach schreibt man ss.';
+      if (o === 'ss') return 'Der Selbstlaut ist lang. Nach einem langen Selbstlaut wird nie verdoppelt.';
+      return it.ext ? `Verlängere das Wort: ${it.ext}. Summt es wie eine Biene oder zischt es wie eine Schlange?`
+        : 'Hör genau hin: Summt es wie bei „Rose“ oder zischt es wie bei „Straße“?';
+    }
+    return it.long ? 'Der Selbstlaut ist lang. Nach einem langen Selbstlaut wird nie verdoppelt.'
+      : `Der Selbstlaut ist kurz, und du hörst nur ein ${it.c}. Dann schreibst du es doppelt.`;
+  }
+  function wire(t){
+    const it = t.it;
+    const sp = $('#qspk'); if (sp) sp.addEventListener('click', () => { speak(it.full); replay($('#qbody .band')); });
+    $$('#qbody [data-a]').forEach(b => b.addEventListener('click', () => {
+      if (t.a) return;
+      const k = b.dataset.a, ok = (k === 'long') === it.long;
+      if (!ok){
+        t.firstOk = false; t.aSt[k] = 'wrong'; t.cls = 'no';
+        t.msg = `Sprich es ganz langsam. Kannst du das ${it.vn} lang ziehen, ohne dass sich das Wort komisch anhört? Dann ist es lang.`;
+        render(); return;
+      }
+      t.aSt[k] = 'right'; t.a = true; t.fresh = true; t.cls = '';
+      t.msg = `Richtig, das ${it.vn} ist ${it.long ? 'lang' : 'kurz'}. ${it.long ? 'Ein Strich' : 'Ein Punkt'} drunter.`;
+      render();
+      const f = $('#qbody [data-b]'); if (f) f.focus({preventScroll:true});
+    }));
+    $$('#qbody [data-b]').forEach(b => b.addEventListener('click', () => {
+      if (t.done) return;
+      const o = b.dataset.b;
+      if (o !== it.ans){ t.firstOk = false; t.bSt[o] = 'wrong'; t.cls = 'no'; t.msg = wrongMsg(it, o); render(); return; }
+      t.bSt[o] = 'right'; t.done = true; t.cls = 'ok'; t.msg = rightMsg(it);
+      render(); speak(it.full);
+      const nx = $('#qnext'); if (nx) nx.focus({preventScroll:true});
+    }));
+    const nx = $('#qnext');
+    if (nx) nx.addEventListener('click', () => { R.i++; R.i < ROUND ? render() : finish(); });
+  }
+  function finish(){
+    const ok = R.tasks.filter(x => x.firstOk).length;
+    $('#qbody').innerHTML = `<p class="done">Geschafft! ${ok} von ${ROUND} Wörtern waren sofort richtig.</p>
+      <div class="controls"><button class="btn" id="again" type="button">Neue Runde</button></div>`;
+    $('#qpos').textContent = `${ROUND} von ${ROUND}`; $('#qbar').style.width = '100%';
+    $('#again').addEventListener('click', newRound);
+  }
+
+  pairDraw(); newRound();
+})();
+</script>
+</body>
+</html>

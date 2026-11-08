@@ -2,7 +2,7 @@
 
 Interaktive Übungen für alle, die verstehen statt auswendig lernen wollen. Die Idee: Was man einmal gesehen hat, versteht man. Und was man versteht, muss man nicht auswendig lernen.
 
-Angefangen hat es mit Mathe („Mathe sehen“). Weitere Fächer sollen nach und nach dazukommen.
+Angefangen hat es mit Mathe („Mathe sehen“). Dazu kommen nach und nach Naturwissenschaften („Natur sehen“) und Rechtschreibung („Sprache sehen“).
 
 ## Die Übungen
 
@@ -23,6 +23,8 @@ Jede Übung endet mit Aufgaben oder Fragen zum Selbermachen.
 - [ ] **Gleichgewicht:** Gleichungen als Waage, Hebel, Wippe.
 - [ ] **Größenordnungen:** das Sonnensystem maßstabsgetreu, die Erdgeschichte als Zeitstrahl, die Zelle unter dem Mikroskop.
 - [x] **Tag, Nacht und Jahreszeiten:** Die Erde dreht sich und wandert mit schräger Achse um die Sonne, zum Selberdrehen.
+- [x] **Kurz oder lang?:** Rechtschreibung nach dem Klang. i oder ie, s, ss oder ß und doppelte Mitlaute.
+- [x] **Groß oder klein?:** Satzanfang, Begleiter und Artikelprobe, Schritt für Schritt im Satz.
 - [ ] **Kreisläufe:** Wasserkreislauf, Blutkreislauf, Nahrungskette, gern als Animation.
 - [ ] **Oberfläche und Volumen:** Warum haben Elefanten große Ohren und warum frieren kleine Tiere schneller?
 
