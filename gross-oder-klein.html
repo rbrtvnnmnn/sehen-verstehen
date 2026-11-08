@@ -194,8 +194,9 @@ footer{color:var(--ink-soft); font-size:15px; display:flex; flex-wrap:wrap; gap:
       </div>
       <div class="rule">
         <span class="kind">Probe 3</span>
-        <span class="verdict c-noun">… ein Wort, vor das der, die oder das passt.</span>
-        <p>Kein Begleiter da? Setz einen davor. Ich habe Hunger → <b>der Hunger</b> passt, also groß. Wir laufen schnell → <b>das schnell</b>? Passt nicht, also klein.</p>
+        <span class="verdict c-noun">… ein Wort, vor das im Satz der, die oder das passt.</span>
+        <p>Kein Begleiter da? Setz der, die, das (oder den, dem, ein) in den Satz davor und lies den ganzen Satz. „<b>Die</b> Kinder gehen ins Freibad“ klingt richtig, also groß. „Nach der Schule <b>das</b> spielen wir“ klingt falsch, also klein.</p>
+        <p>Wichtig: Allein klingt „das Spielen“ richtig. Darum immer im ganzen Satz prüfen.</p>
         <p>Tipp: Wörter mit den Endungen ‑ung, ‑heit, ‑keit, ‑nis und ‑schaft sind Nomen: die Zeitung, die Freiheit.</p>
       </div>
       <div class="rule">
@@ -258,13 +259,13 @@ function chime(){
     {s:'^Im *Sommer gehen +Kinder:die -gern ^ins *Freibad.', hero:true},
     {s:'^Beim *Essen erzählt +Papa:der von ^seiner *Reise.', hero:true},
     {s:'^Im *Herbst pflücken -wir +Äpfel:die und +Birnen:die.', hero:true},
-    {s:'^Das *Laufen macht mir +Spaß:der.', hero:true},
+    {s:'^Das *Laufen macht mir +Spaß:den.', hero:true},
     {s:'Tom hat +Angst:die ^im *Dunkeln.', hero:true},
     {s:'+Hunde:die bellen -oft in ^der *Nacht.', hero:true},
     {s:'^Meine *Oma hat mir ^zum *Geburtstag ^ein *Buch geschenkt.'},
-    {s:'Nach ^der *Schule spielen wir mit ^unserem neuen *Ball.'},
+    {s:'Nach ^der *Schule -spielen wir mit ^unserem neuen *Ball.', hero:true},
     {s:'^Unser *Lehrer liest ^eine spannende *Geschichte vor.'},
-    {s:'^Zum *Frühstück esse ich +Brot:das mit +Honig:der.'},
+    {s:'^Zum *Frühstück esse ich +Brot:das mit +Honig:dem.'},
   ].map(x => ({...x, toks:parseS(x.s)}));
 
   function parseS(src){
@@ -333,6 +334,13 @@ function chime(){
     return {up, cls, bub, jump};
   }
   const shown = (toks, t, up) => up[t.i] ? t.cap : t.lo;
+  // the article put into the sentence itself: „…Schule das spielen wir…“
+  const fin = u => u.big ? u.cap : u.lo;
+  function inSent(toks, t, art){
+    const a = toks[t.i - 1], b = toks[t.i + 1];
+    const head = a ? `…${fin(a)}${a.p} ${art}` : capF(art);
+    return `„${head} ${fin(t)}${t.p}${b ? ` ${fin(b)}…` : ''}“`;
+  }
   function proofText(toks, step){
     const v = proofView(toks, step);
     if (step === 0) return 'So sieht es aus, wenn man nur nach Gehör schreibt. Welche Wörter müssen groß?';
@@ -343,10 +351,10 @@ function chime(){
       return `<b class="c-beg">Probe 2: Begleiter.</b> Begleiter zeigen auf ein Nomen: ${pairs.join(', ')}.` +
         (skipped.length ? ` ${skipped.join(' und ')} ${skipped.length === 1 ? 'sagt' : 'sagen'} nur, wie etwas ist, und ${skipped.length === 1 ? 'bleibt' : 'bleiben'} klein.` : '');
     }
-    const yes = toks.filter(t => t.kind === '+').map(t => `„${t.art} ${t.cap}“`), no = toks.filter(t => t.kind === '-').map(t => `„der, die, das ${t.lo}“`);
-    return `<b class="c-noun">Probe 3: Artikelprobe</b> für Wörter ohne Begleiter.` +
-      (yes.length ? ` ${yes.join(' und ')} ${yes.length === 1 ? 'passt' : 'passen'}, also groß.` : '') +
-      (no.length ? ` ${no.join(' und ')} ${no.length === 1 ? 'passt' : 'passen'} nicht, also klein.` : '');
+    const yes = toks.filter(t => t.kind === '+').map(t => inSent(toks, t, t.art)), no = toks.filter(t => t.kind === '-').map(t => inSent(toks, t, 'das'));
+    return `<b class="c-noun">Probe 3: Artikelprobe im Satz</b> für Wörter ohne Begleiter.` +
+      (yes.length ? ` ${yes.join(' und ')} ${yes.length === 1 ? 'klingt' : 'klingen'} richtig, also groß.` : '') +
+      (no.length ? ` ${no.join(' und ')} ${no.length === 1 ? 'klingt' : 'klingen'} falsch, also klein.` : '');
   }
 
   // ---------- sentence workshop ----------
@@ -378,27 +386,27 @@ function chime(){
   const ONE = {
     big:[
       ['Wir gehen in den {Wald}.', '„den“ ist ein Begleiter: den was? Den Wald.'],
-      ['Ich habe {Hunger}.', 'Artikelprobe: „der Hunger“ passt. Auch Gefühle sind Nomen.'],
+      ['Ich habe {Hunger}.', 'Im Satz: „Ich habe einen Hunger“ klingt richtig. Auch Gefühle sind Nomen.'],
       ['Beim {Schwimmen} friere ich.', '„beim“ ist ein Begleiter: beim was? Beim Schwimmen. So wird aus dem Verb ein Nomen.'],
       ['Die {Zeitung} liegt auf dem Tisch.', '„Die“ zeigt darauf: die was? Die Zeitung. Die Endung -ung verrät es auch.'],
-      ['Mein Bruder hat viel {Mut}.', 'Artikelprobe: „der Mut“ passt.'],
+      ['Mein Bruder hat viel {Mut}.', 'Im Satz: „Mein Bruder hat den Mut“ klingt richtig.'],
       ['Ich freue mich auf die {Ferien}.', '„die“ ist ein Begleiter: die was? Die Ferien.'],
       ['Danke für deine {Hilfe}.', '„deine“ ist ein Begleiter: deine was? Deine Hilfe.'],
       ['Das {Lesen} macht mir Spaß.', '„Das“ ist ein Begleiter: das was? Das Lesen. So wird aus dem Verb ein Nomen.'],
-      ['Wir haben {Glück} gehabt.', 'Artikelprobe: „das Glück“ passt.'],
+      ['Wir haben {Glück} gehabt.', 'Im Satz: „Wir haben das Glück gehabt“ klingt richtig.'],
       ['Unsere Lehrerin liest eine {Geschichte} vor.', '„eine“ ist ein Begleiter: eine was? Eine Geschichte.'],
       ['Zum {Malen} brauche ich Farben.', '„Zum“ ist ein Begleiter: zum was? Zum Malen. So wird aus dem Verb ein Nomen.'],
       ['Tom hat Angst im {Dunkeln}.', '„im“ ist ein Begleiter: im was? Im Dunkeln.'],
     ],
     small:[
-      ['Wir {schwimmen} im See.', 'Hier sagt „schwimmen“, was wir tun. Kein Begleiter zeigt darauf, also klein.'],
-      ['Ich kann gut {lesen}.', 'Hier sagt „lesen“, was ich kann. Kein Begleiter zeigt darauf, also klein.'],
-      ['Das Bild ist sehr {schön}.', 'Artikelprobe: „das schön“? Passt nicht. „schön“ sagt, wie das Bild ist.'],
-      ['Am Abend wird es {dunkel}.', 'Artikelprobe: „das dunkel“? Passt nicht. „dunkel“ sagt, wie es wird.'],
+      ['Wir {schwimmen} im See.', 'Im Satz: „Wir das schwimmen im See“? Klingt falsch. „schwimmen“ sagt, was wir tun, also klein.'],
+      ['Wir {lesen} jeden Abend.', 'Im Satz: „Wir das lesen jeden Abend“? Klingt falsch. „lesen“ sagt, was wir tun, also klein.'],
+      ['Das Bild ist sehr {schön}.', 'Im Satz: „Das Bild ist sehr das schön“? Klingt falsch. „schön“ sagt, wie das Bild ist.'],
+      ['Am Abend wird es {dunkel}.', 'Im Satz: „Am Abend wird es das dunkel“? Klingt falsch. „dunkel“ sagt, wie es wird.'],
       ['Der {große} Hund schläft.', 'Falle! „Der“ zeigt weiter: der große was? Der große Hund. „große“ sagt nur, wie der Hund ist.'],
       ['Eine {kleine} Katze miaut.', 'Falle! „Eine“ zeigt weiter: eine kleine was? Eine kleine Katze. „kleine“ bleibt klein.'],
-      ['Wir spielen {gern} Fußball.', 'Artikelprobe: „das gern“? Passt nicht.'],
-      ['Ich {esse} gern Nudeln.', 'Hier sagt „esse“, was ich tue. Kein Begleiter zeigt darauf, also klein.'],
+      ['Wir spielen {gern} Fußball.', 'Im Satz: „Wir spielen das gern Fußball“? Klingt falsch, also klein.'],
+      ['Ich {esse} gern Nudeln.', 'Im Satz: „Ich das esse gern Nudeln“? Klingt falsch. „esse“ sagt, was ich tue, also klein.'],
     ],
   };
   const ROUND = 10;
@@ -472,7 +480,7 @@ function chime(){
       }
       t.firstOk = false; t.bad = new Set(extra.map(x => x.i)); t.cls = 'no';
       const parts = [];
-      if (extra.length) parts.push(`${extra.length === 1 ? 'Das rot markierte Wort bleibt' : 'Die rot markierten Wörter bleiben'} klein. Mach die Artikelprobe.`);
+      if (extra.length) parts.push(`${extra.length === 1 ? 'Das rot markierte Wort bleibt' : 'Die rot markierten Wörter bleiben'} klein. Mach die Artikelprobe im ganzen Satz.`);
       if (miss) parts.push(`${miss === 1 ? 'Ein Wort fehlt' : `${miss} Wörter fehlen`} noch. Hast du an den Satzanfang und an die Begleiter gedacht?`);
       t.msg = `Noch nicht ganz. ${parts.join(' ')}`;
       render();
