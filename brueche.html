@@ -103,6 +103,7 @@ a{color:var(--pen)}
 .fx{display:flex; align-items:center; gap:18px; flex-wrap:wrap}
 .lbls{display:grid; gap:14px; font-size:17px; max-width:30ch}
 .lbls b{font-family:var(--display)}
+.von{font:750 clamp(20px,3.4vw,26px)/1 var(--display); text-align:center; margin-top:8px; white-space:nowrap}
 .ctl{display:flex; flex-wrap:wrap; gap:12px 24px; align-items:center}
 .stepper{display:flex; align-items:center; gap:8px; font:700 17px/1 var(--display)}
 .stepper button{
@@ -226,6 +227,7 @@ footer{color:var(--ink-soft); font-size:15px; display:flex; flex-wrap:wrap; gap:
         <div class="lbls">
           <p><b class="zc">Zähler</b> (oben): zählt, wie viele Teile gefärbt sind.</p>
           <p><b class="nc">Nenner</b> (unten): nennt, in wie viele gleiche Teile das Ganze geteilt ist. Er gibt dem Bruch den Namen: Viertel, Fünftel, Achtel.</p>
+          <p>Lies einen Bruch so: oben <b>von</b> unten. Drei Viertel heißt <b>3 von 4</b> gleichen Teilen.</p>
         </div>
       </div>
     </div>
@@ -395,11 +397,11 @@ function chime(){
     $('#h-n').textContent = n; $('#h-a').textContent = a;
     $('#h-bar').innerHTML = barSVG({n, on:H.on, W:wOf($('#h-bar')), h:70, tap:true});
     $('#h-pie').innerHTML = pieSVG({n, on:H.on, tap:true});
-    $('#h-frac').innerHTML = F(a, n, 'big col');
+    $('#h-frac').innerHTML = F(a, n, 'big col') + `<p class="von"><span class="zc">${a}</span> von <span class="nc">${n}</span></p>`;
     let t;
     if (a === 0) t = `Noch nichts gefärbt: ${F(0, n)} ist null. Tipp auf ein Teil.`;
     else if (a === n) t = `Alle ${n} Teile sind gefärbt. ${F(n, n)} ist <b>ein Ganzes</b>, also 1.`;
-    else t = `Das Ganze ist in <b class="nc">${n} gleiche Teile</b> geteilt. <b class="zc">${a}</b> davon ${a === 1 ? 'ist' : 'sind'} gefärbt. Das ${a === 1 ? 'ist' : 'sind'} <b>${fname(a, n)}</b>.`;
+    else t = `<b class="zc">${a}</b> von <b class="nc">${n}</b> gleichen Teilen ${a === 1 ? 'ist' : 'sind'} gefärbt. Das ${a === 1 ? 'ist' : 'sind'} <b>${fname(a, n)}</b>.`;
     $('#h-out').innerHTML = t;
     document.querySelectorAll('#h-chips .chip').forEach(c => c.classList.toggle('sel', +c.dataset.a === a && +c.dataset.b === n && H.on.slice(0, a).every(Boolean)));
   }
@@ -432,7 +434,7 @@ function chime(){
       $('#e-back').hidden = true;
     } else {
       $('#e-eq').innerHTML = `<div class="eqx">${F(a, b, 'col')}<span class="arr"><span>· ${k} →</span><span>· ${k} →</span></span>${F(a * k, b * k, 'col')}</div>`;
-      $('#e-out').innerHTML = `Jedes Stück ist in ${k} kleinere Stücke geschnitten. Darum gibt es ${k}-mal so viele Stücke <span class="nc">(Nenner · ${k})</span> und ${k}-mal so viele gefärbte <span class="zc">(Zähler · ${k})</span>. Die Farbe reicht genau gleich weit: ${F(a, b)} = ${F(a * k, b * k)}. Das heißt <b>Erweitern</b>.`;
+      $('#e-out').innerHTML = `Jedes Stück ist in ${k} kleinere Stücke geschnitten. Darum gibt es ${k}-mal so viele Stücke <span class="nc">(Nenner · ${k})</span> und ${k}-mal so viele gefärbte <span class="zc">(Zähler · ${k})</span>. Die Farbe reicht genau gleich weit: <b>${a} von ${b}</b> ist dasselbe wie <b>${a * k} von ${b * k}</b>. Das heißt <b>Erweitern</b>.`;
       $('#e-back').hidden = false;
       $('#e-back').innerHTML = `Rückwärts heißt das <b>Kürzen</b>: ${F(a * k, b * k)} → ${F(a, b)}. Leg immer ${k} kleine Stücke zusammen, also oben und unten geteilt durch ${k}. Das kennst du von den <a href="nullen-paare.html">Nullen-Paaren</a>: Was du oben machst, machst du auch unten.`;
     }
@@ -666,7 +668,7 @@ function chime(){
       const c = t.on.filter(Boolean).length;
       if (c === 0){ say(t, 'no', 'Tipp zuerst auf die Teile, die du färben willst.'); return; }
       first(t, c === t.a);
-      if (c === t.a){ finishTask(t, `Richtig! ${t.a} von ${t.n} gleichen Teilen sind gefärbt.`); return; }
+      if (c === t.a){ finishTask(t, `Richtig! ${t.a} von ${t.n} gleichen Teilen ${t.a === 1 ? 'ist' : 'sind'} gefärbt.`); return; }
       say(t, 'no', `Du hast ${c} ${c === 1 ? 'Teil' : 'Teile'} gefärbt. Oben im Bruch steht ${t.a}: so viele Teile sollen gefärbt sein.`);
       return;
     }
