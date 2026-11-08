@@ -292,6 +292,26 @@ footer{color:var(--ink-soft); font-size:15px; display:flex; flex-wrap:wrap; gap:
 </main>
 
 <script>
+// Klang bei richtiger Antwort: zwei helle Töne, direkt im Browser erzeugt (keine Datei, keine Verbindung nach außen).
+let chimeCtx = null;
+function chime(){
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    chimeCtx = chimeCtx || new AC();
+    const c = chimeCtx; if (c.state === 'suspended') c.resume();
+    const t0 = c.currentTime + .01, out = c.createGain(); out.gain.value = .22; out.connect(c.destination);
+    [[880, 0], [1318.5, .11]].forEach(([f, d]) => [1, 2].forEach((h, k) => {
+      const o = c.createOscillator(), g = c.createGain();
+      o.type = 'sine'; o.frequency.value = f * h;
+      g.gain.setValueAtTime(0, t0 + d);
+      g.gain.linearRampToValueAtTime(k ? .25 : 1, t0 + d + .01);
+      g.gain.exponentialRampToValueAtTime(.001, t0 + d + (k ? .25 : .6));
+      o.connect(g); g.connect(out); o.start(t0 + d); o.stop(t0 + d + .65);
+    }));
+  } catch (e) {}
+}
+</script>
+<script>
 (() => {
   const $ = s => document.querySelector(s);
   const rint = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
@@ -585,7 +605,7 @@ footer{color:var(--ink-soft); font-size:15px; display:flex; flex-wrap:wrap; gap:
     $('#qbar').style.width = `${(R.i + (cur().done ? 1 : 0)) / ROUND * 100}%`;
   }
   function say(t, cls, msg){ t.cls = cls; t.msg = msg; const s = $('#qsay'); if (s){ s.className = `say ${cls}`; s.innerHTML = msg; } }
-  function finishTask(t, msg){ t.done = true; t.cls = 'ok'; t.msg = msg; render(); const nx = $('#qnext'); if (nx) nx.focus({preventScroll:true}); }
+  function finishTask(t, msg){ chime(); t.done = true; t.cls = 'ok'; t.msg = msg; render(); const nx = $('#qnext'); if (nx) nx.focus({preventScroll:true}); }
 
   function wire(t){
     document.querySelectorAll('#qbody .op').forEach(b => b.addEventListener('click', () => {

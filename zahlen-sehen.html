@@ -251,6 +251,26 @@ p{margin:0}
 </main>
 
 <script>
+// Klang bei richtiger Antwort: zwei helle Töne, direkt im Browser erzeugt (keine Datei, keine Verbindung nach außen).
+let chimeCtx = null;
+function chime(){
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    chimeCtx = chimeCtx || new AC();
+    const c = chimeCtx; if (c.state === 'suspended') c.resume();
+    const t0 = c.currentTime + .01, out = c.createGain(); out.gain.value = .22; out.connect(c.destination);
+    [[880, 0], [1318.5, .11]].forEach(([f, d]) => [1, 2].forEach((h, k) => {
+      const o = c.createOscillator(), g = c.createGain();
+      o.type = 'sine'; o.frequency.value = f * h;
+      g.gain.setValueAtTime(0, t0 + d);
+      g.gain.linearRampToValueAtTime(k ? .25 : 1, t0 + d + .01);
+      g.gain.exponentialRampToValueAtTime(.001, t0 + d + (k ? .25 : .6));
+      o.connect(g); g.connect(out); o.start(t0 + d); o.stop(t0 + d + .65);
+    }));
+  } catch (e) {}
+}
+</script>
+<script>
 (() => {
   const $ = s => document.querySelector(s);
   const UNITS = [
@@ -447,7 +467,7 @@ p{margin:0}
     tries++;
     const s = solve(task.a, task.b);
     if (v === task.q){
-      right++;
+      right++; chime();
       fb.className = 'fb ok';
       fb.textContent = s.u.v === 1
         ? `Richtig! ${fmt(task.b)} passt ${task.q}-mal in ${fmt(task.a)}.`

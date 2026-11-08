@@ -236,6 +236,26 @@ footer{color:var(--ink-soft); font-size:15px; display:flex; flex-wrap:wrap; gap:
 </main>
 
 <script>
+// Klang bei richtiger Antwort: zwei helle Töne, direkt im Browser erzeugt (keine Datei, keine Verbindung nach außen).
+let chimeCtx = null;
+function chime(){
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    chimeCtx = chimeCtx || new AC();
+    const c = chimeCtx; if (c.state === 'suspended') c.resume();
+    const t0 = c.currentTime + .01, out = c.createGain(); out.gain.value = .22; out.connect(c.destination);
+    [[880, 0], [1318.5, .11]].forEach(([f, d]) => [1, 2].forEach((h, k) => {
+      const o = c.createOscillator(), g = c.createGain();
+      o.type = 'sine'; o.frequency.value = f * h;
+      g.gain.setValueAtTime(0, t0 + d);
+      g.gain.linearRampToValueAtTime(k ? .25 : 1, t0 + d + .01);
+      g.gain.exponentialRampToValueAtTime(.001, t0 + d + (k ? .25 : .6));
+      o.connect(g); g.connect(out); o.start(t0 + d); o.stop(t0 + d + .65);
+    }));
+  } catch (e) {}
+}
+</script>
+<script>
 (() => {
   const $ = s => document.querySelector(s);
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -541,7 +561,7 @@ footer{color:var(--ink-soft); font-size:15px; display:flex; flex-wrap:wrap; gap:
       if (it.done) return;
       const o = it.opts[+b.dataset.i];
       if (it.firstOk === null) it.firstOk = !!o.ok;
-      if (o.ok){ o.state = 'right'; it.done = true; it.cls = 'ok'; it.msg = `Richtig! ${it.q.ex}`; render(); const nx = $('#qnext'); if (nx) nx.focus({preventScroll:true}); }
+      if (o.ok){ chime(); o.state = 'right'; it.done = true; it.cls = 'ok'; it.msg = `Richtig! ${it.q.ex}`; render(); const nx = $('#qnext'); if (nx) nx.focus({preventScroll:true}); }
       else { o.state = 'wrong'; it.cls = 'no'; it.msg = 'Noch nicht. Tipp auf „Zeig’s mir“ und schau es dir an.'; render(); }
     }));
     $('#qshow').addEventListener('click', () => show(it.q.show));

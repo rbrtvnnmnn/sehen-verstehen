@@ -225,6 +225,26 @@ footer{color:var(--ink-soft); font-size:15px; display:flex; flex-wrap:wrap; gap:
 </main>
 
 <script>
+// Klang bei richtiger Antwort: zwei helle Töne, direkt im Browser erzeugt (keine Datei, keine Verbindung nach außen).
+let chimeCtx = null;
+function chime(){
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    chimeCtx = chimeCtx || new AC();
+    const c = chimeCtx; if (c.state === 'suspended') c.resume();
+    const t0 = c.currentTime + .01, out = c.createGain(); out.gain.value = .22; out.connect(c.destination);
+    [[880, 0], [1318.5, .11]].forEach(([f, d]) => [1, 2].forEach((h, k) => {
+      const o = c.createOscillator(), g = c.createGain();
+      o.type = 'sine'; o.frequency.value = f * h;
+      g.gain.setValueAtTime(0, t0 + d);
+      g.gain.linearRampToValueAtTime(k ? .25 : 1, t0 + d + .01);
+      g.gain.exponentialRampToValueAtTime(.001, t0 + d + (k ? .25 : .6));
+      o.connect(g); g.connect(out); o.start(t0 + d); o.stop(t0 + d + .65);
+    }));
+  } catch (e) {}
+}
+</script>
+<script>
 (() => {
   const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
   const pick = arr => arr[Math.floor(Math.random() * arr.length)];
@@ -435,7 +455,7 @@ footer{color:var(--ink-soft); font-size:15px; display:flex; flex-wrap:wrap; gap:
       if (t.done) return;
       const k = +b.dataset.o, ok = (k === 0) === t.big;
       if (!ok){ t.firstOk = false; t.st[k] = 'wrong'; t.cls = 'no'; t.msg = `Noch nicht. ${t.why}`; render(); return; }
-      t.st[k] = 'right'; t.done = true; t.ans = t.opts[k]; t.cls = 'ok'; t.msg = `Richtig! ${t.why}`;
+      chime(); t.st[k] = 'right'; t.done = true; t.ans = t.opts[k]; t.cls = 'ok'; t.msg = `Richtig! ${t.why}`;
       render(); const nx = $('#qnext'); if (nx) nx.focus({preventScroll:true});
     }));
     $$('#qbody button.wd').forEach(b => b.addEventListener('click', () => {
@@ -447,7 +467,7 @@ footer{color:var(--ink-soft); font-size:15px; display:flex; flex-wrap:wrap; gap:
       const miss = t.toks.filter(x => x.big && !t.up[x.i]).length;
       const extra = t.toks.filter(x => !x.big && t.up[x.i]);
       if (!miss && !extra.length){
-        t.done = true; t.cls = 'ok'; t.msg = `Richtig! ${t.firstOk ? 'Alles auf Anhieb. ' : ''}Die Linien zeigen die Proben: Satzanfang, Begleiter und Artikelprobe.`;
+        chime(); t.done = true; t.cls = 'ok'; t.msg = `Richtig! ${t.firstOk ? 'Alles auf Anhieb. ' : ''}Die Linien zeigen die Proben: Satzanfang, Begleiter und Artikelprobe.`;
         render(); const nx = $('#qnext'); if (nx) nx.focus({preventScroll:true}); return;
       }
       t.firstOk = false; t.bad = new Set(extra.map(x => x.i)); t.cls = 'no';

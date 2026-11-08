@@ -263,6 +263,26 @@ footer a{color:var(--pen)}
 </main>
 
 <script>
+// Klang bei richtiger Antwort: zwei helle Töne, direkt im Browser erzeugt (keine Datei, keine Verbindung nach außen).
+let chimeCtx = null;
+function chime(){
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    chimeCtx = chimeCtx || new AC();
+    const c = chimeCtx; if (c.state === 'suspended') c.resume();
+    const t0 = c.currentTime + .01, out = c.createGain(); out.gain.value = .22; out.connect(c.destination);
+    [[880, 0], [1318.5, .11]].forEach(([f, d]) => [1, 2].forEach((h, k) => {
+      const o = c.createOscillator(), g = c.createGain();
+      o.type = 'sine'; o.frequency.value = f * h;
+      g.gain.setValueAtTime(0, t0 + d);
+      g.gain.linearRampToValueAtTime(k ? .25 : 1, t0 + d + .01);
+      g.gain.exponentialRampToValueAtTime(.001, t0 + d + (k ? .25 : .6));
+      o.connect(g); g.connect(out); o.start(t0 + d); o.stop(t0 + d + .65);
+    }));
+  } catch (e) {}
+}
+</script>
+<script>
 (() => {
   const $ = s => document.querySelector(s);
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -531,7 +551,7 @@ footer a{color:var(--pen)}
     const ain = $('#ain'), v = parseInt(ain.value, 10), say = $('#asay');
     if (isNaN(v)){ say.className = 'say no'; say.textContent = 'Schreib zuerst dein Ergebnis ins Kästchen.'; return; }
     if (v === S.b - S.s){
-      S.step = 3; S.aCls = 'ok'; S.aMsg = 'Richtig!'; render();
+      chime(); S.step = 3; S.aCls = 'ok'; S.aMsg = 'Richtig!'; render();
       const nx = $('#next'); if (nx) nx.focus({preventScroll:true});
     } else {
       S.aCls = 'no'; S.aMsg = `Noch nicht. Probe: ${S.s} + ${v} = ${S.s + v}, nicht ${S.b}. Tipp auf „Zahlenstrahl zeigen“.`;
